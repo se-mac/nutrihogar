@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NutriHogar Smart - Nutrición y Gestión Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+        body { 
+            font-family: 'Quicksand', sans-serif; 
+            background-color: #f1f5f9; 
+        }
+        .glass-card {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.03), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+            border: 1px solid #e2e8f0;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .plate-segment { transition: stroke-dashoffset 0.8s ease-in-out; }
+        
+        .store-btn { transition: all 0.2s ease; border-radius: 12px; }
+        .store-btn:active { transform: scale(0.95); }
+        .btn-active-inv { background-color: #10b981; color: white; border-color: #059669; }
+        .btn-active-wish { background-color: #3b82f6; color: white; border-color: #2563eb; }
+        .btn-inactive { background-color: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex justify-center items-center antialiased p-0 md:p-4">
+
+    <!-- CONTENEDOR DISPOSITIVO MÓVIL -->
+    <div class="w-full max-w-md h-screen md:h-[860px] md:rounded-[40px] md:shadow-2xl bg-slate-50 flex flex-col overflow-hidden relative md:border-[8px] border-slate-300">
+        
+        <!-- ENCABEZADO -->
+        <header id="appHeader" class="hidden bg-white px-5 pt-8 pb-4 flex justify-between items-center z-40 shrink-0 shadow-sm rounded-b-3xl relative">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-inner">
+                    <i class="fa-solid fa-leaf text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-800">Nutri<span class="text-green-500">Hogar</span> Smart</h1>
+                    <p class="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Ecosistema Inteligente</p>
+                </div>
+            </div>
+            <div class="flex flex-col items-end">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Hoy</span>
+                <span class="text-sm font-bold text-slate-800"><span id="headerKcal" class="text-green-500">0</span> kcal</span>
+            </div>
+        </header>
+
+        <!-- CONTENEDOR DE VISTAS -->
+        <div class="flex-1 overflow-y-auto hide-scrollbar px-4 py-5 z-10 space-y-5 relative bg-slate-50">
+
+            <!-- PANTALLA 0: INICIO DE SESIÓN -->
+            <section id="view-login" class="fade-in flex flex-col justify-center h-full px-4 space-y-8">
+                <div class="text-center space-y-3 bg-black rounded-3xl py-6 px-4 shadow-lg">
+                    <!-- NUEVO LOGO INTEGRADO -->
+                    <img src="BUSINESS.jpg" alt="NutriHogar Smart Logo" class="w-full mx-auto object-contain drop-shadow-sm">
+                </div>
+
+                <div class="glass-card p-6 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Usuario / Email</label>
+                        <input type="email" value="camila.cama@email.com" class="w-full rounded-xl p-3 text-sm bg-slate-50 border border-slate-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Contraseña</label>
+                        <input type="password" value="••••••••" class="w-full rounded-xl p-3 text-sm bg-slate-50 border border-slate-200 outline-none">
+                    </div>
+                    <button onclick="app.processLogin()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl text-sm shadow-md transition-all">
+                        Ingresar al Sistema <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- PANTALLA 1: DASHBOARD (PLATO + ACCESOS) -->
+            <section id="view-dashboard" class="hidden fade-in space-y-5 pb-6">
+                <!-- Plato Nutricional -->
+                <div class="glass-card p-5 flex flex-col items-center">
+                    <div class="w-full text-center mb-2">
+                        <h2 class="text-base font-bold text-slate-800">Distribución de Macronutrientes</h2>
+                        <p class="text-xs text-slate-500">Balance nutricional acumulado hoy</p>
+                    </div>
+
+                    <div class="flex items-center w-full gap-5 my-2">
+                        <div class="relative w-36 h-36 flex items-center justify-center shrink-0">
+                            <div class="absolute inset-0 rounded-full bg-slate-100 shadow-inner"></div>
+                            <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90 relative z-10">
+                                <circle cx="50" cy="50" r="40" stroke="#e2e8f0" stroke-width="7" fill="transparent" />
+                                <circle id="plate-ring-veg" cx="50" cy="50" r="40" stroke="#10b981" stroke-width="7" stroke-linecap="round" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="plate-segment" />
+                                <circle id="plate-ring-prot" cx="50" cy="50" r="32" stroke="#f97316" stroke-width="7" stroke-linecap="round" fill="transparent" stroke-dasharray="201" stroke-dashoffset="201" class="plate-segment" />
+                                <circle id="plate-ring-carb" cx="50" cy="50" r="24" stroke="#eab308" stroke-width="7" stroke-linecap="round" fill="transparent" stroke-dasharray="150.7" stroke-dashoffset="150.7" class="plate-segment" />
+                            </svg>
+                            <div class="absolute w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center z-20">
+                                <i class="fa-solid fa-utensils text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 w-full space-y-2">
+                            <div class="bg-green-50/70 rounded-xl p-2 flex justify-between items-center border border-green-100">
+                                <span class="text-xs font-bold text-green-700 flex items-center gap-1.5"><i class="fa-solid fa-carrot"></i> Verduras</span>
+                                <span id="pct-veg" class="text-xs font-bold text-green-600">0%</span>
+                            </div>
+                            <div class="bg-orange-50/70 rounded-xl p-2 flex justify-between items-center border border-orange-100">
+                                <span class="text-xs font-bold text-orange-700 flex items-center gap-1.5"><i class="fa-solid fa-drumstick-bite"></i> Proteínas</span>
+                                <span id="pct-prot" class="text-xs font-bold text-orange-600">0%</span>
+                            </div>
+                            <div class="bg-yellow-50/70 rounded-xl p-2 flex justify-between items-center border border-yellow-100">
+                                <span class="text-xs font-bold text-yellow-700 flex items-center gap-1.5"><i class="fa-solid fa-bread-slice"></i> Carbos</span>
+                                <span id="pct-carb" class="text-xs font-bold text-yellow-600">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjetas de Navegación a las Listas -->
+                <div class="glass-card p-4 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-boxes-stacked text-slate-600"></i> Gestión de Inventario
+                    </h3>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="app.openStore('inventory')" class="flex flex-col items-center justify-center text-center p-4 rounded-2xl bg-green-50 shadow-sm text-green-800 border border-green-100 hover:bg-green-100 transition-all">
+                            <i class="fa-solid fa-house text-2xl mb-2 text-green-500"></i>
+                            <span class="text-sm font-bold mb-1">Mi Almacén</span>
+                            <span class="text-[10px] font-bold text-green-600 bg-white px-2 py-0.5 rounded-full mb-2 border border-green-200"><span id="dash-inv-count">0</span> ítems</span>
+                            <span class="text-[10px] font-medium leading-tight text-slate-600">Comida que tienes en casa</span>
+                        </button>
+                        
+                        <button onclick="app.openStore('wishlist')" class="flex flex-col items-center justify-center text-center p-4 rounded-2xl bg-blue-50 shadow-sm text-blue-800 border border-blue-100 hover:bg-blue-100 transition-all">
+                            <i class="fa-solid fa-star text-2xl mb-2 text-blue-400"></i>
+                            <span class="text-sm font-bold mb-1">Mi Wishlist</span>
+                            <span class="text-[10px] font-bold text-blue-600 bg-white px-2 py-0.5 rounded-full mb-2 border border-blue-200"><span id="dash-wish-count">0</span> ítems</span>
+                            <span class="text-[10px] font-medium leading-tight text-slate-600">Comida por comprar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="app.navigate('camera')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-1.5 active:bg-slate-50">
+                        <div class="w-9 h-9 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-base">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700">Escanear Cámara</span>
+                    </button>
+                    <button onclick="app.navigate('text-log')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-1.5 active:bg-slate-50">
+                        <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-base">
+                            <i class="fa-solid fa-keyboard"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700">Ingreso Escrito</span>
+                    </button>
+                </div>
+
+                <!-- Recetas -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="app.navigate('recipes')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-1.5 active:bg-slate-50">
+                        <div class="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-base">
+                            <i class="fa-solid fa-book-open"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700">Ver Recetas</span>
+                    </button>
+                    <button onclick="app.navigate('recipe-day')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-1.5 active:bg-slate-50">
+                        <div class="w-9 h-9 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center text-base">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700">Receta del Día</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- PANTALLA: ALMACÉN / WISHLIST DEDICADO -->
+            <section id="view-store" class="hidden fade-in space-y-4 pb-6 flex flex-col h-full">
+                <div class="flex items-center gap-3">
+                    <button onclick="app.navigate('dashboard')" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2 id="store-view-title" class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <!-- Se inyecta por JS -->
+                        </h2>
+                    </div>
+                </div>
+                
+                <div class="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm">
+                    <p id="store-view-desc" class="text-xs text-slate-600 font-medium leading-relaxed">
+                        <!-- Se inyecta por JS -->
+                    </p>
+                </div>
+
+                <!-- BARRA DE BÚSQUEDA AÑADIDA AQUÍ -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="store-search" oninput="app.renderStore()" placeholder="Buscar alimentos..." class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-xs outline-none focus:border-green-500 shadow-sm font-medium">
+                </div>
+
+                <div class="glass-card p-4 flex-1 overflow-y-auto hide-scrollbar bg-slate-50/50">
+                    <div id="dedicatedStoreContainer" class="space-y-4">
+                        <!-- Categorias inyectadas por JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANTALLA 2: ANÁLISIS DE CONSUMO -->
+            <section id="view-history" class="hidden fade-in space-y-4 pb-6">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-green-500"></i> Análisis de Consumo
+                </h2>
+
+                <div class="flex bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+                    <button id="period-day" onclick="app.changeChartPeriod('day')" class="flex-1 text-xs font-bold py-2 rounded-lg bg-green-50 text-green-600">Hoy</button>
+                    <button id="period-week" onclick="app.changeChartPeriod('week')" class="flex-1 text-xs font-bold py-2 rounded-lg text-slate-500">Esta Semana</button>
+                    <button id="period-month" onclick="app.changeChartPeriod('month')" class="flex-1 text-xs font-bold py-2 rounded-lg text-slate-500">Este Mes</button>
+                </div>
+
+                <div class="glass-card p-4 space-y-3">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-800" id="chart-title">Calorías Hoy</h3>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wide" id="chart-subtitle">Desglose de ingestas</p>
+                        </div>
+                        <div class="bg-slate-100 px-2.5 py-1 rounded-lg text-right text-[11px] font-bold text-slate-700" id="chart-avg">
+                            Total: 0 kcal
+                        </div>
+                    </div>
+
+                    <div class="w-full h-32 bg-slate-50 rounded-xl border border-slate-200 relative overflow-hidden flex items-end pb-6 px-4">
+                        <svg id="svg-simple-chart" viewBox="0 0 300 100" class="w-full h-full overflow-visible" preserveAspectRatio="none">
+                            <line x1="0" y1="20" x2="300" y2="20" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3"/>
+                            <line x1="0" y1="60" x2="300" y2="60" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3"/>
+                            <line x1="0" y1="100" x2="300" y2="100" stroke="#cbd5e1" stroke-width="1"/>
+                            <g id="chart-labels" class="text-[9px] fill-slate-400 font-bold"></g>
+                            <path id="chart-area" d="" fill="rgba(16, 185, 129, 0.08)" />
+                            <path id="chart-line" d="" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" />
+                            <g id="chart-points"></g>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 space-y-3" id="nutrient-detail">
+                    <!-- Se llena por JS -->
+                </div>
+
+                <div class="glass-card p-4 space-y-3 bg-gradient-to-br from-emerald-50/40 to-white border border-emerald-100">
+                    <div class="flex items-center gap-2 text-emerald-800">
+                        <i class="fa-solid fa-comment-medical text-base"></i>
+                        <h3 class="text-xs font-bold uppercase tracking-wider">Diagnóstico Didáctico</h3>
+                    </div>
+                    <div class="space-y-2 text-xs text-slate-600 leading-relaxed">
+                        <p id="narrative-analysis">Cargando análisis...</p>
+                        <div class="p-2.5 bg-white border border-slate-100 rounded-xl text-[11px] text-slate-700 space-y-1">
+                            <span class="font-bold text-slate-800 block"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i> Consejo del Coach:</span>
+                            <span id="narrative-suggestion">Cargando sugerencia...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="app.toggleHistoryModal(true)" class="w-full bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-xl text-xs border border-slate-200 shadow-xs flex items-center justify-center gap-2 transition-all">
+                    <i class="fa-solid fa-clock-rotate-left text-slate-400"></i> Ver Mi Bitácora Completa
+                </button>
+            </section>
+
+            <!-- PANTALLA 3: PERFIL (SIMPLIFICADO) -->
+            <section id="view-profile" class="hidden fade-in space-y-4 pb-6">
+                <!-- Cabecera limpia: Solo nombre y avatar -->
+                <div class="glass-card p-6 text-center">
+                    <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full mx-auto flex items-center justify-center text-3xl font-bold shadow-inner border-4 border-white shadow-md">
+                        CC
+                    </div>
+                    <div class="mt-3">
+                        <h2 class="text-xl font-bold text-slate-800">Camila Cama</h2>
+                    </div>
+                </div>
+
+                <!-- Tu Composición (Sin Meta Diaria) -->
+                <div class="glass-card p-4 space-y-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b pb-1">Tu Composición Física</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="bg-slate-50 p-3 rounded-xl text-center">
+                            <span class="block text-[10px] text-slate-400 font-medium mb-1">Peso</span>
+                            <input type="number" id="prof-weight" value="60" class="w-full text-center bg-transparent font-bold text-sm outline-none" oninput="app.updateProfileData()">
+                            <span class="text-[9px] text-slate-400 font-bold">kg</span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl text-center">
+                            <span class="block text-[10px] text-slate-400 font-medium mb-1">Altura</span>
+                            <input type="number" id="prof-height" value="165" class="w-full text-center bg-transparent font-bold text-sm outline-none" oninput="app.updateProfileData()">
+                            <span class="text-[9px] text-slate-400 font-bold">cm</span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl text-center bg-emerald-50/50 border border-emerald-100">
+                            <span class="block text-[10px] text-emerald-700 font-bold mb-1">Tu IMC</span>
+                            <span id="prof-imc" class="block font-bold text-sm text-slate-800">--</span>
+                            <span id="prof-imc-lbl" class="text-[9px] font-bold block text-emerald-600 mt-0.5">Normopeso</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 space-y-2">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b pb-1">Distribución Objetivo (%)</h3>
+                    <div class="space-y-3 text-xs pt-1">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-green-700"><i class="fa-solid fa-leaf mr-1"></i> Verduras / Fibra</span>
+                            <input type="number" value="40" class="w-14 text-center bg-slate-100 rounded-lg px-2 py-1.5 font-bold outline-none focus:ring-2 focus:ring-green-200">
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-orange-700"><i class="fa-solid fa-drumstick-bite mr-1"></i> Proteínas</span>
+                            <input type="number" value="30" class="w-14 text-center bg-slate-100 rounded-lg px-2 py-1.5 font-bold outline-none focus:ring-2 focus:ring-orange-200">
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-yellow-700"><i class="fa-solid fa-bread-slice mr-1"></i> Carbohidratos</span>
+                            <input type="number" value="30" class="w-14 text-center bg-slate-100 rounded-lg px-2 py-1.5 font-bold outline-none focus:ring-2 focus:ring-yellow-200">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="app.navigate('login')" class="w-full bg-slate-100 hover:bg-slate-200 text-red-500 font-bold py-3.5 rounded-xl text-xs border border-slate-200 transition-colors">
+                    <i class="fa-solid fa-power-off mr-1"></i> Cerrar Sesión
+                </button>
+            </section>
+
+            <!-- PANTALLA: VER RECETAS -->
+            <section id="view-recipes" class="hidden fade-in space-y-4 pb-6">
+                <div class="flex items-center gap-3">
+                    <button onclick="app.navigate('dashboard')" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-book-open text-purple-500"></i> Ver Recetas
+                        </h2>
+                        <p class="text-xs text-slate-500">Basadas en tu almacén</p>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 space-y-2">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Ingredientes disponibles en tu almacén</p>
+                    <div id="recipes-inventory-tags" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <div id="recipes-list" class="space-y-3"></div>
+            </section>
+
+            <!-- PANTALLA: RECETA DEL DÍA -->
+            <section id="view-recipe-day" class="hidden fade-in space-y-4 pb-6">
+                <div class="flex items-center gap-3">
+                    <button onclick="app.navigate('dashboard')" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-star text-pink-500"></i> Receta del Día
+                        </h2>
+                        <p class="text-xs text-slate-500">Sugerida según tu consumo y objetivo</p>
+                    </div>
+                </div>
+
+                <div id="recipe-day-content" class="space-y-4"></div>
+            </section>
+
+            <!-- ENTRADAS AUXILIARES -->
+            <section id="view-camera" class="hidden fade-in space-y-4">
+                <button onclick="app.navigate('dashboard')" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="bg-slate-900 rounded-3xl h-48 flex flex-col items-center justify-center text-white relative overflow-hidden">
+                    <i class="fa-solid fa-camera text-2xl text-emerald-400 mb-1"></i>
+                    <p class="text-xs text-slate-300">Escáner de Visión Artificial</p>
+                    <button onclick="app.processInput('camera')" class="absolute bottom-3 bg-white w-12 h-12 rounded-full flex items-center justify-center shadow-md">
+                        <div class="w-10 h-10 rounded-full border border-slate-800"></div>
+                    </button>
+                </div>
+                <div id="cameraResults"></div>
+            </section>
+
+            <section id="view-text-log" class="hidden fade-in space-y-4">
+                <button onclick="app.navigate('dashboard')" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="glass-card p-4 space-y-3">
+                    <h3 class="font-bold text-xs text-slate-700">Describe tu plato</h3>
+                    <textarea id="text-input-field" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs outline-none focus:border-blue-500" rows="3" placeholder="Ej: Pechuga de pollo asada con una porción de arroz y ensalada de tomate..."></textarea>
+                    <button onclick="app.processInput('text')" class="w-full bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs">
+                        Analizar Texto
+                    </button>
+                </div>
+                <div id="textResults"></div>
+            </section>
+
+        </div>
+
+        <!-- MODAL DEL HISTORIAL -->
+        <div id="history-modal" class="hidden absolute inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex flex-col justify-end">
+            <div class="bg-white rounded-t-[32px] max-h-[80%] overflow-y-auto p-5 space-y-4 shadow-2xl flex flex-col">
+                <div class="flex justify-between items-center border-b pb-3 shrink-0">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-green-500"></i>
+                        <h3 class="font-bold text-sm text-slate-800">Bitácora de Comidas Recientes</h3>
+                    </div>
+                    <button onclick="app.toggleHistoryModal(false)" class="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                </div>
+                <div id="historyListContainer" class="space-y-2 flex-1 overflow-y-auto hide-scrollbar pb-6"></div>
+            </div>
+        </div>
+
+        <!-- BARRA DE NAVEGACIÓN -->
+        <nav id="appNavbar" class="hidden bg-white border-t border-slate-200 h-16 shrink-0 grid grid-cols-3 items-center justify-center text-center z-40 rounded-t-3xl shadow-md">
+            <button onclick="app.navigate('dashboard')" class="nav-btn flex flex-col items-center gap-1 text-green-500" id="nav-dashboard">
+                <i class="fa-solid fa-cookie-bite text-base"></i>
+                <span class="text-[10px] font-bold">Mi Plato</span>
+            </button>
+            <button onclick="app.navigate('history')" class="nav-btn flex flex-col items-center gap-1 text-slate-400" id="nav-history">
+                <i class="fa-solid fa-chart-line text-base"></i>
+                <span class="text-[10px] font-bold">Tendencias</span>
+            </button>
+            <button onclick="app.navigate('profile')" class="nav-btn flex flex-col items-center gap-1 text-slate-400" id="nav-profile">
+                <i class="fa-solid fa-user text-base"></i>
+                <span class="text-[10px] font-bold">Perfil</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        const DB = {
+            categories: [
+                { id: 'veg', name: 'Verduras y Frutas', color: 'green', items: ['Tomate', 'Lechuga', 'Brócoli', 'Espinaca', 'Manzana', 'Plátano', 'Zanahoria'] },
+                { id: 'prot', name: 'Proteínas', color: 'orange', items: ['Pollo', 'Huevo', 'Pescado', 'Lentejas', 'Carne de Res', 'Pavo', 'Garbanzos'] },
+                { id: 'carb', name: 'Carbohidratos', color: 'yellow', items: ['Arroz', 'Papa', 'Avena', 'Camote', 'Fideos', 'Pan', 'Quinoa'] }
+            ],
+            history: [
+                { date: 'Ayer', name: 'Almuerzo: Pescado con Arroz', kcal: 580 },
+                { date: 'Ayer', name: 'Desayuno: Avena con Plátano', kcal: 340 },
+                { date: 'Hace 2 días', name: 'Cena: Tortilla de Espinaca y Huevo', kcal: 290 }
+            ]
+        };
+
+        const state = {
+            view: 'login',
+            storeTab: 'inventory',
+            chartPeriod: 'day',
+            inventory: new Set(['Tomate', 'Pollo', 'Arroz', 'Huevo']),
+            wishlist: new Set(['Brócoli', 'Pescado', 'Espinaca']),
+            today: { kcal: 920, prot: 55, carb: 100, fat: 24, veg: 30 },
+            profile: { weight: 60, height: 165 },
+            currentAnalysis: null
+        };
+
+        const app = {
+            init() { 
+                this.navigate('login'); 
+                this.updateProfileData();
+            },
+
+            processLogin() {
+                document.getElementById('appHeader').classList.remove('hidden');
+                document.getElementById('appNavbar').classList.remove('hidden');
+                this.navigate('dashboard');
+            },
+
+            navigate(viewId) {
+                state.view = viewId;
+                document.querySelectorAll('section[id^="view-"]').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`view-${viewId}`).classList.remove('hidden');
+
+                let activeNavId = viewId === 'store' ? 'dashboard' : viewId;
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-green-500', 'text-slate-400'));
+                const activeBtn = document.getElementById(`nav-${activeNavId}`);
+                if (activeBtn) activeBtn.classList.replace('text-slate-400', 'text-green-500');
+
+                if (viewId === 'dashboard') {
+                    this.updatePlate();
+                    this.updateDashboardCounts();
+                } else if (viewId === 'history') {
+                    this.changeChartPeriod(state.chartPeriod);
+                } else if (viewId === 'recipes') {
+                    this.loadRecipes();
+                } else if (viewId === 'recipe-day') {
+                    this.loadRecipeDay();
+                }
+            },
+
+            updateDashboardCounts() {
+                const invEl = document.getElementById('dash-inv-count');
+                const wishEl = document.getElementById('dash-wish-count');
+                if(invEl) invEl.innerText = state.inventory.size;
+                if(wishEl) wishEl.innerText = state.wishlist.size;
+            },
+
+            openStore(tab) {
+                state.storeTab = tab;
+                this.navigate('store');
+                
+                const titleEl = document.getElementById('store-view-title');
+                const descEl = document.getElementById('store-view-desc');
+                const searchInput = document.getElementById('store-search');
+                
+                if (searchInput) searchInput.value = ''; // Limpiar barra de búsqueda al abrir
+                
+                if (tab === 'inventory') {
+                    titleEl.innerHTML = `<i class="fa-solid fa-house text-green-500"></i> Mi Almacén`;
+                    descEl.innerHTML = `<strong>¿Qué es el Almacén?</strong><br>Es el espacio donde registras la comida que tienes físicamente en tu casa disponible para consumir hoy.`;
+                } else {
+                    titleEl.innerHTML = `<i class="fa-solid fa-star text-blue-400"></i> Mi Wishlist`;
+                    descEl.innerHTML = `<strong>¿Qué es la Wishlist?</strong><br>Es tu lista de deseos. Marca aquí la comida que sueles comprar, te gusta o necesitas, pero que aún no tienes en casa.`;
+                }
+                
+                this.renderStore();
+            },
+
+            // LÓGICA DE BÚSQUEDA AÑADIDA AQUÍ
+            renderStore() {
+                const container = document.getElementById('dedicatedStoreContainer');
+                if(!container) return;
+                
+                const searchTerm = (document.getElementById('store-search')?.value || '').toLowerCase();
+                container.innerHTML = '';
+                const isInv = state.storeTab === 'inventory';
+                const activeSet = isInv ? state.inventory : state.wishlist;
+
+                let foundAny = false;
+
+                DB.categories.forEach(cat => {
+                    let itemsHtml = '';
+                    let hasVisibleItems = false;
+
+                    cat.items.forEach(item => {
+                        // Filtrar por el texto de búsqueda
+                        if (item.toLowerCase().includes(searchTerm)) {
+                            hasVisibleItems = true;
+                            foundAny = true;
+                            const hasItem = activeSet.has(item);
+                            let btnClass = `store-btn px-3 py-2 text-xs font-bold border shadow-sm ${hasItem ? (isInv ? 'btn-active-inv' : 'btn-active-wish') : 'btn-inactive hover:bg-slate-100'}`;
+                            itemsHtml += `<button onclick="app.toggleStoreItem('${item}')" class="${btnClass}">${item}</button>`;
+                        }
+                    });
+                    
+                    if (hasVisibleItems) {
+                        container.innerHTML += `
+                            <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2 pb-1 border-b border-slate-100"><i class="fa-solid fa-tag text-slate-300 mr-1"></i> ${cat.name}</span>
+                                <div class="flex flex-wrap gap-2">${itemsHtml}</div>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (!foundAny) {
+                    container.innerHTML = `<div class="text-center p-6 text-slate-400 text-xs font-medium"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl opacity-50 block"></i> No se encontraron alimentos que coincidan con tu búsqueda.</div>`;
+                }
+            },
+
+            toggleStoreItem(item) {
+                const currentSet = state.storeTab === 'inventory' ? state.inventory : state.wishlist;
+                const oppositeSet = state.storeTab === 'inventory' ? state.wishlist : state.inventory;
+                if (currentSet.has(item)) currentSet.delete(item);
+                else { currentSet.add(item); oppositeSet.delete(item); }
+                this.renderStore(); // Re-renderiza manteniendo el filtro de búsqueda activo
+                this.updateDashboardCounts(); 
+            },
+
+            updateProfileData() {
+                state.profile.weight = Number(document.getElementById('prof-weight').value) || 0;
+                state.profile.height = Number(document.getElementById('prof-height').value) || 0;
+                
+                if (state.profile.weight > 0 && state.profile.height > 0) {
+                    const heightMeters = state.profile.height / 100;
+                    const imc = (state.profile.weight / (heightMeters * heightMeters)).toFixed(1);
+                    document.getElementById('prof-imc').innerText = imc;
+                    
+                    const lbl = document.getElementById('prof-imc-lbl');
+                    if (imc < 18.5) { lbl.innerText = "Bajo peso"; lbl.className = "text-[9px] font-bold block text-yellow-600 mt-0.5"; }
+                    else if (imc < 25) { lbl.innerText = "Normopeso"; lbl.className = "text-[9px] font-bold block text-emerald-600 mt-0.5"; }
+                    else { lbl.innerText = "Sobrepeso"; lbl.className = "text-[9px] font-bold block text-orange-600 mt-0.5"; }
+                }
+                if (state.view === 'dashboard') this.updatePlate();
+            },
+
+            updatePlate() {
+                const pctVeg = Math.min(100, Math.round((state.today.veg / 100) * 100));
+                const pctProt = Math.min(100, Math.round((state.today.prot / 120) * 100));
+                const pctCarb = Math.min(100, Math.round((state.today.carb / 240) * 100));
+
+                document.getElementById('headerKcal').innerText = state.today.kcal;
+                document.getElementById('pct-veg').innerText = `${pctVeg}%`;
+                document.getElementById('pct-prot').innerText = `${pctProt}%`;
+                document.getElementById('pct-carb').innerText = `${pctCarb}%`;
+
+                document.getElementById('plate-ring-veg').style.strokeDashoffset = 251.2 - (251.2 * pctVeg / 100);
+                document.getElementById('plate-ring-prot').style.strokeDashoffset = 201 - (201 * pctProt / 100);
+                document.getElementById('plate-ring-carb').style.strokeDashoffset = 150.7 - (150.7 * pctCarb / 100);
+            },
+
+            changeChartPeriod(period) {
+                state.chartPeriod = period;
+                ['day', 'week', 'month'].forEach(p => {
+                    document.getElementById(`period-${p}`).className = p === period ? 'flex-1 text-xs font-bold py-2 rounded-lg bg-green-50 text-green-600' : 'flex-1 text-xs font-bold py-2 rounded-lg text-slate-500';
+                });
+
+                let chartData = {};
+                let analysisText = "";
+                let suggestionText = "";
+
+                let nutrients = [];
+
+                if (period === 'day') {
+                    chartData = {
+                        title: 'Calorías Hoy', subtitle: 'Ingestas registradas', labelBox: 'Total Hoy', totalStr: `${state.today.kcal} kcal`, points: [320, 600, 0, 0], labels: ['Des.', 'Alm.', 'Cena', 'Col.']
+                    };
+                    analysisText = "Hoy has cubierto de forma excelente tu requerimiento de proteínas. Sin embargo, tu volumen de verduras sigue bajo respecto a tu meta.";
+                    suggestionText = "Para la cena, prioriza alimentos ligeros. Tienes Espinaca fresca en tu Wishlist, podrías añadirla a tus compras de hoy.";
+                    nutrients = [
+                        { label: 'Verduras / Fibra', icon: 'fa-carrot', color: 'green',  val: state.today.veg,  goal: 100,  unit: 'g' },
+                        { label: 'Proteínas',        icon: 'fa-drumstick-bite', color: 'orange', val: state.today.prot, goal: 120,  unit: 'g' },
+                        { label: 'Carbohidratos',    icon: 'fa-bread-slice', color: 'yellow', val: state.today.carb, goal: 240,  unit: 'g' },
+                        { label: 'Grasas',           icon: 'fa-droplet',     color: 'blue',   val: state.today.fat,  goal: 65,   unit: 'g' }
+                    ];
+                } else if (period === 'week') {
+                    chartData = {
+                        title: 'Tendencia de la Semana', subtitle: 'Consumo diario promedio', labelBox: 'Promedio Diario', totalStr: '1980 kcal/día', points: [2050, 1910, 2150, 1880, state.today.kcal, 0, 0], labels: ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+                    };
+                    analysisText = "Esta semana demuestras una consistencia destacable, manteniéndote por debajo de tu límite calórico.";
+                    suggestionText = "Intenta nivelar los carbohidratos complejos usando el Arroz integral que ya tienes guardado en tu alacena.";
+                    nutrients = [
+                        { label: 'Verduras / Fibra', icon: 'fa-carrot',        color: 'green',  val: 68,  goal: 100, unit: 'g/día' },
+                        { label: 'Proteínas',        icon: 'fa-drumstick-bite', color: 'orange', val: 98,  goal: 120, unit: 'g/día' },
+                        { label: 'Carbohidratos',    icon: 'fa-bread-slice',    color: 'yellow', val: 210, goal: 240, unit: 'g/día' },
+                        { label: 'Grasas',           icon: 'fa-droplet',        color: 'blue',   val: 58,  goal: 65,  unit: 'g/día' }
+                    ];
+                } else {
+                    chartData = {
+                        title: 'Análisis Mensual', subtitle: 'Comportamiento mensual', labelBox: 'Promedio Diario', totalStr: '2010 kcal/día', points: [1950, 2080, 2020, 1990], labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
+                    };
+                    analysisText = "Durante el último mes has logrado consolidar un patrón alimentario equilibrado.";
+                    suggestionText = "Se observa un descenso leve de micronutrientes. Te sugerimos revisar las verduras congeladas de tu alacena.";
+                    nutrients = [
+                        { label: 'Verduras / Fibra', icon: 'fa-carrot',        color: 'green',  val: 72,  goal: 100, unit: 'g/día' },
+                        { label: 'Proteínas',        icon: 'fa-drumstick-bite', color: 'orange', val: 105, goal: 120, unit: 'g/día' },
+                        { label: 'Carbohidratos',    icon: 'fa-bread-slice',    color: 'yellow', val: 225, goal: 240, unit: 'g/día' },
+                        { label: 'Grasas',           icon: 'fa-droplet',        color: 'blue',   val: 60,  goal: 65,  unit: 'g/día' }
+                    ];
+                }
+
+                document.getElementById('chart-title').innerText = chartData.title;
+                document.getElementById('chart-subtitle').innerText = chartData.subtitle;
+                document.getElementById('chart-avg').innerHTML = `<span class="text-[9px] text-slate-400 block">${chartData.labelBox}</span>${chartData.totalStr}`;
+                document.getElementById('narrative-analysis').innerText = analysisText;
+                document.getElementById('narrative-suggestion').innerText = suggestionText;
+                this.drawChart(chartData.points, chartData.labels);
+
+                const colorMap = { green: ['bg-green-50', 'border-green-100', 'text-green-700', 'bg-green-400'], orange: ['bg-orange-50', 'border-orange-100', 'text-orange-700', 'bg-orange-400'], yellow: ['bg-yellow-50', 'border-yellow-100', 'text-yellow-700', 'bg-yellow-400'], blue: ['bg-blue-50', 'border-blue-100', 'text-blue-700', 'bg-blue-400'] };
+                document.getElementById('nutrient-detail').innerHTML = `
+                    <h3 class="text-xs font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-chart-simple text-slate-500"></i> Detalle de Nutrientes</h3>
+                    <div class="space-y-3">
+                        ${nutrients.map(n => {
+                            const pct = Math.min(100, Math.round((n.val / n.goal) * 100));
+                            const [bg, border, text, bar] = colorMap[n.color];
+                            return `
+                                <div class="${bg} border ${border} p-3 rounded-xl space-y-1.5">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-bold ${text}"><i class="fa-solid ${n.icon} mr-1"></i>${n.label}</span>
+                                        <span class="text-xs font-bold text-slate-700">${n.val}<span class="text-[10px] text-slate-400 font-medium"> / ${n.goal} ${n.unit}</span></span>
+                                    </div>
+                                    <div class="w-full bg-white rounded-full h-1.5 border ${border}">
+                                        <div class="${bar} h-1.5 rounded-full transition-all" style="width:${pct}%"></div>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 text-right font-bold">${pct}% del objetivo</p>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            },
+
+            drawChart(points, labels) {
+                const line = document.getElementById('chart-line');
+                const area = document.getElementById('chart-area');
+                const dots = document.getElementById('chart-points');
+                const texts = document.getElementById('chart-labels');
+                dots.innerHTML = ''; texts.innerHTML = '';
+
+                const width = 300, height = 100, paddingX = 20;
+                const maxVal = Math.max(...points, 2500) * 1.15;
+                const stepX = (width - paddingX * 2) / (points.length - 1 || 1);
+
+                let dPath = '', dArea = `M ${paddingX} ${height} `;
+
+                points.forEach((val, i) => {
+                    const x = paddingX + (i * stepX);
+                    const y = height - ((val / maxVal) * height) - 8;
+
+                    if (i === 0) dPath += `M ${x} ${y} `;
+                    else dPath += `L ${x} ${y} `;
+                    dArea += `L ${x} ${y} `;
+
+                    let c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', '3');
+                    c.setAttribute('fill', '#fff'); c.setAttribute('stroke', '#10b981'); c.setAttribute('stroke-width', '2');
+                    dots.appendChild(c);
+
+                    let t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    t.setAttribute('x', x); t.setAttribute('y', height + 13); t.setAttribute('text-anchor', 'middle');
+                    t.textContent = labels[i];
+                    texts.appendChild(t);
+                });
+                dArea += `L ${paddingX + (points.length - 1) * stepX} ${height} Z`;
+                line.setAttribute('d', dPath);
+                area.setAttribute('d', dArea);
+            },
+
+            toggleHistoryModal(show) {
+                const modal = document.getElementById('history-modal');
+                modal.className = show ? "absolute inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex flex-col justify-end" : "hidden";
+                if (show) {
+                    const container = document.getElementById('historyListContainer');
+                    container.innerHTML = "";
+                    const currentLogs = [
+                        { name: "Almuerzo: Filete de Pollo con Arroz", kcal: 600 },
+                        { name: "Desayuno: Huevos revueltos con Pan", kcal: 320 },
+                        ...DB.history
+                    ];
+                    currentLogs.forEach(item => {
+                        container.innerHTML += `
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between items-center">
+                                <div><h4 class="text-xs font-bold text-slate-800">${item.name}</h4><span class="text-[9px] text-slate-400">${item.date || 'Hoy'}</span></div>
+                                <span class="text-xs font-bold text-slate-700 bg-white px-2 py-0.5 rounded-md border">${item.kcal} kcal</span>
+                            </div>
+                        `;
+                    });
+                }
+            },
+
+            loadRecipes() {
+                const RECIPES = [
+                    { name: 'Ensalada de Tomate y Pollo', emoji: '🥗', kcal: 380, prot: 35, carb: 12, required: ['Tomate', 'Pollo'], time: '15 min', difficulty: 'Fácil', tip: 'Alta en proteína, baja en carbos. Ideal para el almuerzo.' },
+                    { name: 'Arroz con Huevo', emoji: '🍳', kcal: 420, prot: 18, carb: 55, required: ['Arroz', 'Huevo'], time: '20 min', difficulty: 'Fácil', tip: 'Clásico equilibrado, buena fuente de carbos y proteína.' },
+                    { name: 'Pollo con Brócoli', emoji: '🍗', kcal: 350, prot: 40, carb: 10, required: ['Pollo', 'Brócoli'], time: '25 min', difficulty: 'Medio', tip: 'Ideal si tu objetivo es aumentar músculo y reducir grasa.' },
+                    { name: 'Omelette de Espinaca', emoji: '🥚', kcal: 280, prot: 22, carb: 5, required: ['Huevo', 'Espinaca'], time: '10 min', difficulty: 'Fácil', tip: 'Desayuno proteico, muy bajo en carbohidratos.' },
+                    { name: 'Pescado con Zanahoria', emoji: '🐟', kcal: 310, prot: 32, carb: 14, required: ['Pescado', 'Zanahoria'], time: '20 min', difficulty: 'Medio', tip: 'Rico en omega-3 y betacarotenos.' },
+                    { name: 'Sopa de Pollo con Verduras', emoji: '🍲', kcal: 290, prot: 28, carb: 18, required: ['Pollo', 'Zanahoria'], time: '30 min', difficulty: 'Fácil', tip: 'Reconfortante y muy nutritiva.' }
+                ];
+
+                const tagsEl = document.getElementById('recipes-inventory-tags');
+                tagsEl.innerHTML = '';
+                if (state.inventory.size === 0) {
+                    tagsEl.innerHTML = '<span class="text-xs text-slate-400 italic">Tu almacén está vacío. Ve a "Mi Almacén" y selecciona ingredientes.</span>';
+                } else {
+                    state.inventory.forEach(item => {
+                        tagsEl.innerHTML += `<span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200"><i class="fa-solid fa-check mr-1"></i>${item}</span>`;
+                    });
+                }
+
+                const listEl = document.getElementById('recipes-list');
+                listEl.innerHTML = '';
+                RECIPES.forEach(recipe => {
+                    const matchCount = recipe.required.filter(i => state.inventory.has(i)).length;
+                    const canMake = matchCount === recipe.required.length;
+                    const partial = matchCount > 0 && !canMake;
+                    listEl.innerHTML += `
+                        <div class="glass-card p-4 space-y-3 ${canMake ? 'border-l-4 border-green-400' : partial ? 'border-l-4 border-yellow-400' : ''}">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-3xl">${recipe.emoji}</span>
+                                    <div>
+                                        <p class="font-bold text-slate-800 text-sm">${recipe.name}</p>
+                                        <p class="text-[10px] text-slate-500">${recipe.time} · ${recipe.difficulty}</p>
+                                    </div>
+                                </div>
+                                ${canMake ? '<span class="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full shrink-0 border border-green-200">✓ Disponible</span>' : partial ? '<span class="text-[10px] font-bold bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full shrink-0 border border-yellow-200">Parcial</span>' : '<span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full shrink-0">Faltan ingredientes</span>'}
+                            </div>
+                            <div class="flex gap-2 text-[11px]">
+                                <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded-full font-bold">${recipe.kcal} kcal</span>
+                                <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-bold">${recipe.prot}g prot</span>
+                                <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-bold">${recipe.carb}g carbs</span>
+                            </div>
+                            <p class="text-xs text-slate-500 bg-slate-50 p-2 rounded-lg">${recipe.tip}</p>
+                            <p class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Ingredientes: </span>${recipe.required.map(i => `<span class="${state.inventory.has(i) ? 'text-green-600 font-bold' : 'text-red-500'}">${i}</span>`).join(', ')}</p>
+                        </div>
+                    `;
+                });
+            },
+
+            loadRecipeDay() {
+                const RECIPES = [
+                    { name: 'Pollo con Brócoli', emoji: '🍗', kcal: 350, prot: 40, carb: 10, fat: 8, needed: 'proteína', required: ['Pollo', 'Brócoli'], time: '25 min', steps: ['Condimenta el pollo con sal, pimienta y ajo.', 'Cocina el brócoli al vapor 8 minutos.', 'Asa el pollo en sartén con poco aceite hasta dorar.', 'Sirve juntos.'] },
+                    { name: 'Arroz con Verduras', emoji: '🍚', kcal: 420, prot: 12, carb: 65, fat: 6, needed: 'carbohidratos', required: ['Arroz', 'Zanahoria'], time: '25 min', steps: ['Hierve el arroz en agua con sal.', 'Saltea la zanahoria en cubos pequeños.', 'Mezcla con el arroz y sirve.'] },
+                    { name: 'Ensalada de Tomate y Lechuga', emoji: '🥗', kcal: 180, prot: 5, carb: 14, fat: 4, needed: 'verduras', required: ['Tomate', 'Lechuga'], time: '5 min', steps: ['Lava y pica el tomate y la lechuga.', 'Aliña con aceite, sal y limón al gusto.'] },
+                    { name: 'Omelette de Huevo', emoji: '🥚', kcal: 280, prot: 22, carb: 5, fat: 18, needed: 'proteína', required: ['Huevo'], time: '10 min', steps: ['Bate los huevos con sal y pimienta.', 'Vierte en sartén caliente con un poco de aceite.', 'Dobla y sirve cuando esté cuajado.'] }
+                ];
+
+                const pctProt = state.today.prot / 120;
+                const pctCarb = state.today.carb / 240;
+                const pctVeg  = state.today.veg  / 100;
+
+                let reason, candidate;
+                if (pctProt <= pctCarb && pctProt <= pctVeg) {
+                    reason = `Tu proteína está en ${Math.round(pctProt * 100)}% de tu meta diaria. Esta receta te ayuda a alcanzarla.`;
+                    candidate = RECIPES.find(r => r.needed === 'proteína' && r.required.some(i => state.inventory.has(i))) || RECIPES[0];
+                } else if (pctCarb <= pctVeg) {
+                    reason = `Tus carbohidratos están en ${Math.round(pctCarb * 100)}% del objetivo. Esta receta aporta energía sostenida.`;
+                    candidate = RECIPES.find(r => r.needed === 'carbohidratos' && r.required.some(i => state.inventory.has(i))) || RECIPES[1];
+                } else {
+                    reason = `Tu consumo de verduras está en ${Math.round(pctVeg * 100)}% de la meta. Esta receta es rica en fibra y micronutrientes.`;
+                    candidate = RECIPES.find(r => r.needed === 'verduras' && r.required.some(i => state.inventory.has(i))) || RECIPES[2];
+                }
+
+                const allInInventory = candidate.required.every(i => state.inventory.has(i));
+                document.getElementById('recipe-day-content').innerHTML = `
+                    <div class="glass-card p-5 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="text-4xl">${candidate.emoji}</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-800">${candidate.name}</h3>
+                                    <p class="text-xs text-slate-500">${candidate.time}</p>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-bold bg-pink-100 text-pink-700 px-2 py-1 rounded-full border border-pink-200 shrink-0">Recomendada</span>
+                        </div>
+
+                        <div class="bg-purple-50 border border-purple-200 p-3 rounded-xl space-y-1">
+                            <p class="text-xs font-bold text-purple-800"><i class="fa-solid fa-sparkles mr-1"></i> ¿Por qué esta receta?</p>
+                            <p class="text-xs text-purple-700 leading-relaxed">${reason}</p>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-2 text-center">
+                            <div class="bg-green-50 p-2 rounded-xl border border-green-100"><p class="text-[9px] text-green-600 font-bold uppercase">Kcal</p><p class="text-sm font-bold text-slate-800">${candidate.kcal}</p></div>
+                            <div class="bg-orange-50 p-2 rounded-xl border border-orange-100"><p class="text-[9px] text-orange-600 font-bold uppercase">Prot</p><p class="text-sm font-bold text-slate-800">${candidate.prot}g</p></div>
+                            <div class="bg-yellow-50 p-2 rounded-xl border border-yellow-100"><p class="text-[9px] text-yellow-600 font-bold uppercase">Carbs</p><p class="text-sm font-bold text-slate-800">${candidate.carb}g</p></div>
+                            <div class="bg-blue-50 p-2 rounded-xl border border-blue-100"><p class="text-[9px] text-blue-600 font-bold uppercase">Grasa</p><p class="text-sm font-bold text-slate-800">${candidate.fat}g</p></div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <p class="text-xs font-bold text-slate-700">Ingredientes</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${candidate.required.map(i => `<span class="${state.inventory.has(i) ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'} text-xs font-bold px-3 py-1 rounded-full border">${state.inventory.has(i) ? '✓' : '✗'} ${i}</span>`).join('')}
+                            </div>
+                            ${!allInInventory ? '<p class="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 p-2 rounded-lg mt-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Algunos ingredientes no están en tu almacén.</p>' : ''}
+                        </div>
+
+                        <div class="space-y-2">
+                            <p class="text-xs font-bold text-slate-700">Preparación</p>
+                            ${candidate.steps.map((step, i) => `
+                                <div class="flex gap-3 items-start">
+                                    <span class="w-5 h-5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">${i + 1}</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed">${step}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            },
+
+            // INTELIGENCIA DE SUGERENCIAS AL ESCANEAR/TECLEAR
+            getCrossedAdvice() {
+                const hasVeg = Array.from(state.inventory).find(i => DB.categories[0].items.includes(i));
+                const missingVeg = Array.from(state.wishlist).find(i => DB.categories[0].items.includes(i)) || 'Brócoli';
+
+                if (hasVeg) {
+                    return `Tienes <strong>${hasVeg}</strong> en tu alacena. Te sugerimos sumarlo al plato para completar los minerales recomendados del almuerzo.`;
+                } else {
+                    return `Para balancear tu plato te falta fibra. No te queda stock en casa, pero tienes <strong>${missingVeg}</strong> en tu wishlist de compras.`;
+                }
+            },
+
+            processInput(type) {
+                let name = type === 'camera' ? 'Plato Escaneado por Cámara' : 'Análisis de Menú Escrito';
+                state.currentAnalysis = { name, kcal: 450, prot: 25, carb: 50, fat: 12, veg: 10 };
+
+                const containerId = type === 'camera' ? 'cameraResults' : 'textResults';
+                const container = document.getElementById(containerId);
+                
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 mt-2 fade-in text-xs">
+                        <div class="flex justify-between items-center border-b pb-2"><span class="font-bold text-slate-800">${name}</span><span class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded text-[10px]">Pre-Análisis Inteligente</span></div>
+                        
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
+                            <label class="flex items-center gap-2 font-bold text-slate-700 cursor-pointer"><input type="checkbox" id="chk-qty-${type}" onchange="app.toggleAdvancedMetrics('${type}')" class="w-4 h-4 text-blue-600 rounded">¿Deseas añadir cantidades específicas?</label>
+                            <p class="text-[10px] text-slate-400">Activa esta casilla para introducir porciones o gramos exactos.</p>
+                            <div id="qty-inputs-${type}" class="hidden pt-2 grid grid-cols-2 gap-2 border-t border-dashed border-slate-200">
+                                <div><span class="text-[9px] text-slate-500 font-bold block">Proteína (g)</span><input type="number" id="input-g-prot-${type}" value="150" class="w-full bg-white border p-1 rounded" oninput="app.recalculateAdvanced('${type}')"></div>
+                                <div><span class="text-[9px] text-slate-500 font-bold block">Carbohidrato (g)</span><input type="number" id="input-g-carb-${type}" value="120" class="w-full bg-white border p-1 rounded" oninput="app.recalculateAdvanced('${type}')"></div>
+                            </div>
+                        </div>
+
+                        <div id="report-box-${type}" class="bg-green-50/60 p-2.5 rounded-xl text-slate-700 space-y-1">
+                            <div class="flex justify-between"><span>Energía aproximada:</span><strong>450 kcal</strong></div>
+                            <div class="flex justify-between text-orange-700"><span>Proteína estimada:</span><strong>25 g</strong></div>
+                            <div class="flex justify-between text-yellow-700"><span>Carbohidratos:</span><strong>50 g</strong></div>
+                        </div>
+
+                        <!-- SUGERENCIA CON ALACENA / WISHLIST -->
+                        <div class="bg-amber-50/80 p-3 rounded-xl border border-amber-200 text-[11px] space-y-1">
+                            <span class="font-bold text-amber-800 block"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Balance de Alacena</span>
+                            <p id="advice-text-${type}" class="leading-relaxed">${this.getCrossedAdvice()}</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <button onclick="app.discardInput('${containerId}')" class="bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-2 rounded-xl border"><i class="fa-solid fa-trash mr-1"></i> Descartar</button>
+                            <button onclick="app.saveInput()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-xl shadow-xs"><i class="fa-solid fa-floppy-disk mr-1"></i> Guardar</button>
+                        </div>
+                    </div>
+                `;
+            },
+
+            toggleAdvancedMetrics(type) {
+                const isChecked = document.getElementById(`chk-qty-${type}`).checked;
+                document.getElementById(`qty-inputs-${type}`).className = isChecked ? 'pt-2 grid grid-cols-2 gap-2 border-t border-dashed border-slate-200' : 'hidden';
+                this.recalculateAdvanced(type);
+            },
+
+            recalculateAdvanced(type) {
+                const isChecked = document.getElementById(`chk-qty-${type}`).checked;
+                const reportBox = document.getElementById(`report-box-${type}`);
+                if (isChecked) {
+                    const gProt = Number(document.getElementById(`input-g-prot-${type}`).value) || 0;
+                    const gCarb = Number(document.getElementById(`input-g-carb-${type}`).value) || 0;
+                    const calcKcal = Math.round((gProt * 1.4) + (gCarb * 3.6) + 110);
+                    const calcProt = Math.round(gProt * 0.24); 
+                    const calcCarb = Math.round(gCarb * 0.26);
+                    state.currentAnalysis.kcal = calcKcal; state.currentAnalysis.prot = calcProt; state.currentAnalysis.carb = calcCarb;
+                    reportBox.className = "bg-blue-50/70 p-2.5 rounded-xl text-slate-700 space-y-1 border border-blue-200";
+                    reportBox.innerHTML = `
+                        <span class="text-[10px] uppercase font-bold text-blue-700 block"><i class="fa-solid fa-microscope"></i> Reporte Avanzado</span>
+                        <div class="flex justify-between"><span>Energía Calculada:</span><strong>${calcKcal} kcal</strong></div>
+                        <div class="flex justify-between text-orange-700"><span>Proteína Pura Organera:</span><strong>${calcProt} g</strong></div>
+                        <div class="flex justify-between text-yellow-700"><span>Carbohidratos Netos:</span><strong>${calcCarb} g</strong></div>
+                    `;
+                } else {
+                    state.currentAnalysis = { name: state.currentAnalysis.name, kcal: 450, prot: 25, carb: 50, fat: 12, veg: 10 };
+                    reportBox.className = "bg-green-50/60 p-2.5 rounded-xl text-slate-700 space-y-1 border-0";
+                    reportBox.innerHTML = `
+                        <div class="flex justify-between"><span>Energía aproximada:</span><strong>450 kcal</strong></div>
+                        <div class="flex justify-between text-orange-700"><span>Proteína estimada:</span><strong>25 g</strong></div>
+                        <div class="flex justify-between text-yellow-700"><span>Carbohidratos:</span><strong>50 g</strong></div>
+                    `;
+                }
+            },
+
+            discardInput(containerId) {
+                document.getElementById(containerId).innerHTML = '';
+                state.currentAnalysis = null;
+                if (document.getElementById('text-input-field')) document.getElementById('text-input-field').value = '';
+            },
+
+            saveInput() {
+                if (!state.currentAnalysis) return;
+                state.today.kcal += state.currentAnalysis.kcal;
+                state.today.prot += state.currentAnalysis.prot;
+                state.today.carb += state.currentAnalysis.carb;
+                state.today.veg += 15;
+                DB.history.unshift({ date: 'Hoy', name: state.currentAnalysis.name, kcal: state.currentAnalysis.kcal });
+                this.discardInput('cameraResults'); this.discardInput('textResults');
+                this.navigate('dashboard');
+            }
+        };
+
+        window.onload = () => app.init();
+    </script>
+</body>
+</html>
